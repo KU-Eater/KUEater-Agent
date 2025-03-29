@@ -175,7 +175,7 @@ def generate_menuitem_sql(
 
 def menuitem_ingredient_relationships(uid, ingredients, ingredient_uids, final=False) -> str:
     sqls = []
-    for idx, i in enumerate(ingredients):
+    for idx, i in enumerate(set(ingredients)):
         if not i:
             continue
         ingredient_uid = ingredient_uids.loc[i, 'uuid']
