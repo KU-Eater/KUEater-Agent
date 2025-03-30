@@ -1,1 +1,2 @@
 from .encoder import encode
+from .recommendations import generate_recommendations_for_user

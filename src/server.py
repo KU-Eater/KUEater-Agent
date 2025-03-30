@@ -9,8 +9,13 @@ from generated.agent.main_pb2 import (
     GetEmbeddingRequest, GetEmbeddingResponse,
     NewRecommendationsRequest, NewRecommendationsResponse
 )
+
+import dotenv
+
+dotenv.load_dotenv()
+
 from rpc import AgentService
-from model import encode
+from model import encode, generate_recommendations_for_user
 
 class AgentServiceImpl(AgentService):
 
@@ -33,7 +38,14 @@ class AgentServiceImpl(AgentService):
             raise RuntimeError(_e)
     
     async def NewRecommendations(self, request: NewRecommendationsRequest, context: aio.ServicerContext) -> NewRecommendationsResponse:
-        return await super().NewRecommendations(request, context)
+        user_id = request.user_id
+        if not user_id:
+            _e = "User id cannot be empty"
+            context.set_code(StatusCode.INVALID_ARGUMENT)
+            context.set_details(_e)
+            raise ValueError(_e)
+        asyncio.create_task(generate_recommendations_for_user(user_id))
+        return NewRecommendationsResponse()
 
 async def serve(port: int=50052) -> None:
     server = aio.server()
@@ -45,18 +57,20 @@ async def serve(port: int=50052) -> None:
     await server.wait_for_termination()
 
 if __name__ == "__main__":
-    
-    import dotenv
-    
-    dotenv.load_dotenv()
-    
+
+    if sys.platform == 'win32':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
     port = getenv("PORT")
 
-    if not port:
-        asyncio.run(serve())
-    else:
-        try:
-            asyncio.run(serve(int(port)))
-        except ValueError:
-            print("Port is not an integer")
-            sys.exit(1)
+    try:
+        if not port:
+            asyncio.run(serve())
+        else:
+            try:
+                asyncio.run(serve(int(port)))
+            except ValueError:
+                print("Port is not an integer")
+                sys.exit(1)
+    except KeyboardInterrupt:
+        sys.exit(0)
