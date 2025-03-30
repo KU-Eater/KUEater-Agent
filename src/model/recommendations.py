@@ -403,9 +403,9 @@ async def generate_recommendations_for_user(user_id: str):
                                     scores[word] = score
                             if scores:
                                 final_score += sum(scores.values())
-                                if min(scores.values()) >= 8:
+                                if min(scores.values()) >= 6:
                                     good_reasons.append(f"Because you like {choice([
-                                        k for k, s in scores.items() if s >= 8
+                                        k for k, s in scores.items() if s >= 6
                                     ])}")
 
 
